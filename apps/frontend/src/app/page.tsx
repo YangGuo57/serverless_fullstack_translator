@@ -114,7 +114,7 @@ export default function Home() {
       <div>
         <p>Result:</p>
         <pre style={{ whiteSpace: "pre-wrap" }} className="w-full">
-          {JSON.stringify(outputText, null, 2)}
+          {JSON.stringify(outputText?.targetText, null, 2)}
         </pre>
       </div>
 
