@@ -33,4 +33,4 @@ Demo: https://www.121103.xyz/
 This project is still in its prototype stage, and the next steps include:
 
 * **Frontend Improvements**: Enhance the design and usability of the user interface.
-* TBD
+* **Cognito**: Implement customer identity and access management into app (sign-up and sign-in features).
