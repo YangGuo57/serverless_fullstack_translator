@@ -5,6 +5,7 @@ import {
   TranslationService,
   StaticWebsiteDeployment,
   CertificateWrapper,
+  UserAuthService,
 } from "../constructs";
 import { getConfig } from "../helpers";
 
@@ -22,6 +23,9 @@ export class TranslatorServiceStack extends cdk.Stack {
       apiUrl,
       webUrl,
     });
+
+    // Cognito
+    const userAuth = new UserAuthService(this, "userAuthService");
 
     const restApi = new RestApiService(this, "restApiService", {
       apiUrl,
