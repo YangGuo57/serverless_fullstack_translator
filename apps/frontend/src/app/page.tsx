@@ -5,10 +5,11 @@ import {
   ITranslateRequest,
   ITranslateResponse,
 } from "@sff/shared-types";
+import { fetchAuthSession, getCurrentUser } from "aws-amplify/auth";
 
-const URL = "https://api.121103.xyz/";
+const URL = "https://api.121103.xyz";
 
-const translateText = async ({
+const translatePublicText = async ({
   inputLang,
   inputText,
   outputLang,
@@ -24,7 +25,7 @@ const translateText = async ({
       sourceText: inputText,
     };
 
-    const result = await fetch(`${URL}`, {
+    const result = await fetch(`${URL}/public`, {
       method: "POST",
       body: JSON.stringify(request),
     });
@@ -37,10 +38,71 @@ const translateText = async ({
   }
 };
 
-const getTranslations = async () => {
+const translateUsersText = async ({
+  inputLang,
+  inputText,
+  outputLang,
+}: {
+  inputLang: string;
+  inputText: string;
+  outputLang: string;
+}) => {
   try {
-    const result = await fetch(URL, {
+    const request: ITranslateRequest = {
+      sourceLang: inputLang,
+      targetLang: outputLang,
+      sourceText: inputText,
+    };
+
+    const authToken = (await fetchAuthSession()).tokens?.idToken?.toString();
+    console.log("authToken", authToken);
+    const result = await fetch(`${URL}/user`, {
+      method: "POST",
+      body: JSON.stringify(request),
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
+    });
+
+    const rtnValue = (await result.json()) as ITranslateResponse;
+    return rtnValue;
+  } catch (e: any) {
+    console.error(e);
+    throw e;
+  }
+};
+
+const getUsersTranslations = async () => {
+  try {
+    const authToken = (await fetchAuthSession()).tokens?.idToken?.toString();
+    console.log("authToken", authToken);
+    const result = await fetch(`${URL}/user`, {
       method: "GET",
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
+    });
+
+    const rtnValue = (await result.json()) as Array<ITranslateDbObject>;
+    return rtnValue;
+  } catch (e: any) {
+    console.error(e);
+    throw e;
+  }
+};
+
+const deleteUserTranslation = async (item: {
+  username: string;
+  requestId: string;
+}) => {
+  try {
+    const authToken = (await fetchAuthSession()).tokens?.idToken?.toString();
+    const result = await fetch(`${URL}/user`, {
+      method: "DELETE",
+      body: JSON.stringify(item),
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
     });
 
     const rtnValue = (await result.json()) as Array<ITranslateDbObject>;
@@ -65,14 +127,29 @@ export default function Home() {
       <form
         onSubmit={async (event) => {
           event.preventDefault();
-          const result = await translateText({
-            inputLang,
-            outputLang,
-            inputText,
-          });
-          console.log(result);
+          let result = null;
+
+          try {
+            const user = await getCurrentUser();
+            if (user) {
+              result = await translateUsersText({
+                inputLang,
+                outputLang,
+                inputText,
+              });
+            } else {
+              throw new Error("User not signed in");
+            }
+          } catch (e) {
+            result = await translatePublicText({
+              inputLang,
+              outputLang,
+              inputText,
+            });
+          }
           setOutputText(result);
-        }}
+        }
+        }
       >
         <div>
           <label htmlFor="inputText" className="block mb-2">Input text:</label>
@@ -80,7 +157,7 @@ export default function Home() {
             id="inputText"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            className="w-full p-2 rounded border"
+            className="w-full h-32 p-2 rounded border"
           />
         </div>
 
@@ -90,8 +167,8 @@ export default function Home() {
             id="inputLang"
             value={inputLang}
             onChange={(event) => setInputLang(event.target.value)}
-            className="w-full p-2 rounded border"
-            placeholder="Enter text"
+            className="w-full h-8 p-1 rounded border"
+            placeholder="Enter en, es, fr, etc."
           />
         </div>
 
@@ -101,8 +178,8 @@ export default function Home() {
             id="outputLang"
             value={outputLang}
             onChange={(event) => setOutputLang(event.target.value)}
-            className="w-full p-2 rounded border"
-            placeholder="Enter text"
+            className="w-full h-8 p-1 rounded border"
+            placeholder="Enter en, es, fr, etc."
           />
         </div>
 
@@ -120,26 +197,35 @@ export default function Home() {
 
       <button className="btn bg-black text-white p-2 mt-2 rounded-xl" type="button"
         onClick={async () => {
-          const rtnValue = await getTranslations();
+          const rtnValue = await getUsersTranslations();
           setTranslations(rtnValue)
         }}>
         See History
       </button>
 
-      <div>
-        <p>Result:</p>
-        <pre>
-          {translations.map((item) => (
-            <div key={item.requestId}>
-              <p>
-                {item.sourceLang}/{item.sourceText}
-              </p>
-              <p>
-                {item.targetLang}/{item.targetText}
-              </p>
-            </div>
-          ))}
-        </pre>
+      <div className="flex flex-col space-y-2">
+        {translations.map((item) => (
+          <div className="flex flex-row justify-between space-x-2 bg-yellow-500" key={item.requestId}>
+            <p>
+              {item.sourceLang}/{item.sourceText}
+            </p>
+            <p>
+              {item.targetLang}/{item.targetText}
+            </p>
+
+            <button className="btn bg-red-500  w-6 h-6 hover:bg-red-200 rounded-full" type="button"
+              onClick={async () => {
+                const rtnValue = await deleteUserTranslation({
+                  requestId: item.requestId,
+                  username: item.username,
+                });
+                setTranslations(rtnValue)
+              }}>
+              X
+            </button>
+          </div>
+        ))}
+
       </div>
     </main>
   );
