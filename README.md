@@ -34,6 +34,11 @@ This project is still in its prototype stage, and the next steps include:
 
 * **Frontend Improvements**: Enhance the design and usability of the user interface.
 * **Cognito**: Implement customer identity and access management into app (sign-up and sign-in features).
-  * TranslatorService.restApiServicetimeOfDayRestApiEndpoint092B5D66 = https://2oombrapu7.execute-api.us-east-1.amazonaws.com/prod/
-  * TranslatorService.userAuthServiceuserPoolClient3E3EBF9B = 2r06q5vnbm5fcadj42kt7n70ct
-  * TranslatorService.userAuthServiceuserPoolId097CF8F2 = us-east-1_oPvZLC6Cq
+
+ 
+
+## How to use
+* click `User` -> `Register` -> enter your email and password(must contain letters, numbers, and special characters)
+* start translation
+
+
