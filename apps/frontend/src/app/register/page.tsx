@@ -16,6 +16,7 @@ function RegistrationForm({
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [password2, setPassword2] = useState<string>("");
+  const [error, setError] = useState<string | null>(null);
 
   return (
     <form onSubmit={async (event) => {
@@ -37,7 +38,9 @@ function RegistrationForm({
           },
         });
         onStepChange(nextStep);
-      } catch (error) { }
+      } catch (error: any) {
+        setError(error.toString());
+      }
     }}
     >
       <div>
@@ -77,6 +80,7 @@ function RegistrationForm({
 
       <Link href="/user" className="btn bg-black text-white p-2 mt-2 rounded-xl">Login</Link>
 
+      {error && <p className="text-red-800 font-bold">{error}</p>}
     </form>
 
   )

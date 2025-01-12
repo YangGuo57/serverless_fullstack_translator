@@ -9,22 +9,28 @@ import Link from "next/link";
 function Login({ onSignedIn }: { onSignedIn: () => void }) {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const [error, setError] = useState<string | null>(null);
 
   return (
     <form onSubmit={async (event) => {
       event.preventDefault();
-      await signIn(
-        {
-          username: email,
-          password,
-          options: {
-            userAttributes: {
-              email,
+
+      try {
+        await signIn(
+          {
+            username: email,
+            password,
+            options: {
+              userAttributes: {
+                email,
+              }
             }
           }
-        }
-      );
-      onSignedIn();
+        );
+        onSignedIn();
+      } catch (error: any) {
+        setError(error.toString());
+      }
     }}>
       <div>
         <label htmlFor="inputLang" className="block mb-2">Email:</label>
@@ -51,8 +57,9 @@ function Login({ onSignedIn }: { onSignedIn: () => void }) {
       </button>
 
       <Link href="/register" className="btn bg-black text-white p-2 mt-2 rounded-xl">Register</Link>
-    </form>
 
+      {error && <p className="text-red-800 font-bold">{error}</p>}
+    </form>
   );
 
 }
