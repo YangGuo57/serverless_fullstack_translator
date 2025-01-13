@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
-import { Amplify } from "aws-amplify";
-import { ConfigureAmplify } from "@/components";
+import { ConfigureAmplify, Provider } from "@/components";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,11 +20,13 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <ConfigureAmplify />
-        <div className="flex gap-2 px-2 py-2 bg-blue-500">
-          <Link href="/">Home</Link>
-          <Link href="/user">User</Link>
-        </div>
-        {children}
+        <Provider>
+          <div className="flex gap-2 px-2 py-2 bg-blue-500">
+            <Link href="/">Home</Link>
+            <Link href="/user">User</Link>
+          </div>
+          {children}
+        </Provider>
       </body>
     </html>
   );

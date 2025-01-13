@@ -1,153 +1,36 @@
 "use client";
 import { useState } from "react";
-import {
-  ITranslateDbObject,
-  ITranslateRequest,
-  ITranslateResponse,
-} from "@sff/shared-types";
-import { fetchAuthSession, getCurrentUser } from "aws-amplify/auth";
+import { useTranslate } from "@/hooks";
 
-const URL = "https://api.121103.xyz";
-
-const translatePublicText = async ({
-  inputLang,
-  inputText,
-  outputLang,
-}: {
-  inputLang: string;
-  inputText: string;
-  outputLang: string;
-}) => {
-  try {
-    const request: ITranslateRequest = {
-      sourceLang: inputLang,
-      targetLang: outputLang,
-      sourceText: inputText,
-    };
-
-    const result = await fetch(`${URL}/public`, {
-      method: "POST",
-      body: JSON.stringify(request),
-    });
-
-    const rtnValue = (await result.json()) as ITranslateResponse;
-    return rtnValue;
-  } catch (e: any) {
-    console.error(e);
-    throw e;
-  }
-};
-
-const translateUsersText = async ({
-  inputLang,
-  inputText,
-  outputLang,
-}: {
-  inputLang: string;
-  inputText: string;
-  outputLang: string;
-}) => {
-  try {
-    const request: ITranslateRequest = {
-      sourceLang: inputLang,
-      targetLang: outputLang,
-      sourceText: inputText,
-    };
-
-    const authToken = (await fetchAuthSession()).tokens?.idToken?.toString();
-    console.log("authToken", authToken);
-    const result = await fetch(`${URL}/user`, {
-      method: "POST",
-      body: JSON.stringify(request),
-      headers: {
-        Authorization: `Bearer ${authToken}`,
-      },
-    });
-
-    const rtnValue = (await result.json()) as ITranslateResponse;
-    return rtnValue;
-  } catch (e: any) {
-    console.error(e);
-    throw e;
-  }
-};
-
-const getUsersTranslations = async () => {
-  try {
-    const authToken = (await fetchAuthSession()).tokens?.idToken?.toString();
-    console.log("authToken", authToken);
-    const result = await fetch(`${URL}/user`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${authToken}`,
-      },
-    });
-
-    const rtnValue = (await result.json()) as Array<ITranslateDbObject>;
-    return rtnValue;
-  } catch (e: any) {
-    console.error(e);
-    throw e;
-  }
-};
-
-const deleteUserTranslation = async (item: {
-  username: string;
-  requestId: string;
-}) => {
-  try {
-    const authToken = (await fetchAuthSession()).tokens?.idToken?.toString();
-    const result = await fetch(`${URL}/user`, {
-      method: "DELETE",
-      body: JSON.stringify(item),
-      headers: {
-        Authorization: `Bearer ${authToken}`,
-      },
-    });
-
-    const rtnValue = (await result.json()) as Array<ITranslateDbObject>;
-    return rtnValue;
-  } catch (e: any) {
-    console.error(e);
-    throw e;
-  }
-};
 
 export default function Home() {
   const [inputLang, setInputLang] = useState<string>("");
   const [outputLang, setOutputLang] = useState<string>("");
   const [inputText, setInputText] = useState<string>("");
-  const [outputText, setOutputText] = useState<ITranslateResponse | null>(null);
-  const [translations, setTranslations] = useState<Array<ITranslateDbObject>>(
-    []
-  );
+
+  const {
+    isLoading,
+    translations,
+    translate,
+    isTranslating,
+    deleteTranslation,
+    isDeleting,
+  } = useTranslate();
+
+  if (isLoading) {
+    return <p>Loading...</p>;
+  }
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
       <form
         onSubmit={async (event) => {
           event.preventDefault();
-          let result = null;
-
-          try {
-            const user = await getCurrentUser();
-            if (user) {
-              result = await translateUsersText({
-                inputLang,
-                outputLang,
-                inputText,
-              });
-            } else {
-              throw new Error("User not signed in");
-            }
-          } catch (e) {
-            result = await translatePublicText({
-              inputLang,
-              outputLang,
-              inputText,
-            });
-          }
-          setOutputText(result);
+          let result = await translate({
+            sourceLang: inputLang,
+            targetLang: outputLang,
+            sourceText: inputText,
+          });
         }
         }
       >
@@ -163,8 +46,9 @@ export default function Home() {
 
         <div>
           <label htmlFor="inputLang" className="block mb-2">Input Language Code</label>
-          <textarea
+          <input
             id="inputLang"
+            type="text"
             value={inputLang}
             onChange={(event) => setInputLang(event.target.value)}
             className="w-full h-8 p-1 rounded border"
@@ -174,8 +58,9 @@ export default function Home() {
 
         <div>
           <label htmlFor="outputLang" className="block mb-2">Output Language Code</label>
-          <textarea
+          <input
             id="outputLang"
+            type="text"
             value={outputLang}
             onChange={(event) => setOutputLang(event.target.value)}
             className="w-full h-8 p-1 rounded border"
@@ -184,24 +69,9 @@ export default function Home() {
         </div>
 
         <button className="btn bg-black text-white p-2 mt-2 rounded-xl" type="submit">
-          Translate
+          {isTranslating ? "Translating..." : "Translate"}
         </button>
       </form>
-
-      <div>
-        <p>Result:</p>
-        <pre style={{ whiteSpace: "pre-wrap" }} className="w-full">
-          {JSON.stringify(outputText?.targetText, null, 2)}
-        </pre>
-      </div>
-
-      <button className="btn bg-black text-white p-2 mt-2 rounded-xl" type="button"
-        onClick={async () => {
-          const rtnValue = await getUsersTranslations();
-          setTranslations(rtnValue)
-        }}>
-        See History
-      </button>
 
       <div className="flex flex-col space-y-2">
         {translations.map((item) => (
@@ -215,17 +85,12 @@ export default function Home() {
 
             <button className="btn bg-red-500  w-6 h-6 hover:bg-red-200 rounded-full" type="button"
               onClick={async () => {
-                const rtnValue = await deleteUserTranslation({
-                  requestId: item.requestId,
-                  username: item.username,
-                });
-                setTranslations(rtnValue)
+                deleteTranslation(item);
               }}>
-              X
+              {isDeleting ? "..." : "X"}
             </button>
           </div>
         ))}
-
       </div>
     </main>
   );
