@@ -1,68 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
-import { signIn, signOut, getCurrentUser } from "@aws-amplify/auth";
-import Link from "next/link";
+import { signOut, getCurrentUser } from "@aws-amplify/auth";
+import { LoginForm } from "@/components";
 
-
-
-
-function Login({ onSignedIn }: { onSignedIn: () => void }) {
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  const [error, setError] = useState<string | null>(null);
-
-  return (
-    <form onSubmit={async (event) => {
-      event.preventDefault();
-
-      try {
-        await signIn(
-          {
-            username: email,
-            password,
-            options: {
-              userAttributes: {
-                email,
-              }
-            }
-          }
-        );
-        onSignedIn();
-      } catch (error: any) {
-        setError(error.toString());
-      }
-    }}>
-      <div>
-        <label htmlFor="inputLang" className="block mb-2">Email:</label>
-        <input
-          id="email"
-          type="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-        />
-      </div>
-
-      <div>
-        <label htmlFor="password" className="block mb-2">Password:</label>
-        <input
-          id="password"
-          type="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-        />
-      </div>
-
-      <button className="btn bg-black text-white p-2 mt-2 rounded-xl" type="submit">
-        Login
-      </button>
-
-      <Link href="/register" className="btn bg-black text-white p-2 mt-2 rounded-xl">Register</Link>
-
-      {error && <p className="text-red-800 font-bold">{error}</p>}
-    </form>
-  );
-
-}
 
 function Logout({ onSignedOut }: { onSignedOut: () => void }) {
   return (
@@ -106,7 +46,7 @@ export default function User() {
       }} />;
   }
 
-  return <Login onSignedIn={async () => {
+  return <LoginForm onSignedIn={async () => {
     const currUser = await getCurrentUser()
     console.log(currUser);
     setUser(currUser);
