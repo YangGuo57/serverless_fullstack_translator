@@ -1,45 +1,35 @@
+import { useUser } from "@/hooks/useUser";
 import { ILoginFormData } from "@/lib";
-import { signIn } from "aws-amplify/auth";
 import React from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
+import { Label } from "./ui/label";
+import { Input } from "./ui/input";
+import { Button } from "./ui/button";
 
-export const LoginForm = ({ onSignedIn }: { onSignedIn: () => void }) => {
+export const LoginForm = ({ onSignedIn }: { onSignedIn?: () => void }) => {
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<ILoginFormData>();
 
+  const { login, busy } = useUser();
+
   const onSubmit: SubmitHandler<ILoginFormData> = async (
-    {
-      email,
-      password,
-    }, event) => {
+    data,
+    event,
+  ) => {
     event && event.preventDefault();
-    try {
-      await signIn(
-        {
-          username: email,
-          password,
-          options: {
-            userAttributes: {
-              email,
-            }
-          }
-        }
-      );
-      onSignedIn();
-    } catch (error) {
-      console.error(error);
-    }
+    login(data).then(() => {
+      onSignedIn && onSignedIn();
+    })
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <div>
-        <label htmlFor="email" className="block mb-2">Email:</label>
-        <input
-          id="email"
+        <Label htmlFor="email" className="block mb-2">Email:</Label>
+        <Input disabled={busy} id="email"
           {...register("email", { required: true })}
           className="w-full h-8 p-1 rounded border"
         />
@@ -47,19 +37,20 @@ export const LoginForm = ({ onSignedIn }: { onSignedIn: () => void }) => {
       </div>
 
       <div>
-        <label htmlFor="password" className="block mb-2">Password</label>
-        <input
+        <Label htmlFor="password" className="block mb-2">Password</Label>
+        <Input
           id="password"
           type="password"
+          disabled={busy}
           {...register("password", { required: true })}
           className="w-full h-8 p-1 rounded border"
         />
         {errors.password && <span>This field is required</span>}
       </div>
 
-      <button className="btn bg-black text-white p-2 mt-2 rounded-xl" type="submit">
-        {"Login"}
-      </button>
+      <Button className="btn bg-black text-white p-2 mt-2 rounded-xl" type="submit">
+        {busy ? "logging..." : "Login"}
+      </Button>
     </form >
   )
 }

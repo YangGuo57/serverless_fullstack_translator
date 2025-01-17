@@ -2,28 +2,15 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { translateApi } from '@/lib';
-import { useEffect, useState } from 'react';
-import { AuthUser, getCurrentUser } from 'aws-amplify/auth';
 import { ITranslatePrimaryKey, ITranslateRequest } from '@sff/shared-types';
+import { useUser } from './useUser';
+import { useApp } from '@/components';
 
 
 export const useTranslate = () => {
-  const [user, setUser] = useState<AuthUser | null | undefined>(undefined);
+  const { user, serError } = useApp();
   const queryClient = useQueryClient();
   const queryKey = ["translate", user ? user.userId : ""];
-
-  useEffect(() => {
-    async function fetchUser() {
-      try {
-        const currUser = await getCurrentUser();
-        setUser(currUser);
-      } catch (error) {
-        setUser(null);
-      }
-    }
-    fetchUser();
-  }, []
-  );
 
   const translateQuery = useQuery({
     queryKey,
@@ -50,6 +37,9 @@ export const useTranslate = () => {
           translateQuery.data.concat([result])
         );
       }
+    },
+    onError: (error) => {
+      serError(error.toString());
     }
   });
 

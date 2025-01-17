@@ -1,7 +1,7 @@
 import { IRegisterConfirmation, ISignUpState } from "@/lib";
-import { confirmSignUp } from "aws-amplify/auth";
 import React from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
+import { useUser } from "@/hooks";
 
 export const ConfirmSignUp = ({
   onStepChange,
@@ -14,20 +14,18 @@ export const ConfirmSignUp = ({
     formState: { errors },
   } = useForm<IRegisterConfirmation>();
 
-  const onSubmit: SubmitHandler<IRegisterConfirmation> = async (
-    {
-      email,
-      verificationCode,
-    }, event) => {
-    event && event.preventDefault();
+  const { confirmRegister } = useUser();
 
-    try {
-      const { nextStep } = await confirmSignUp({
-        confirmationCode: verificationCode,
-        username: email,
-      });
-      onStepChange(nextStep);
-    } catch (error) { }
+  const onSubmit: SubmitHandler<IRegisterConfirmation> = async (
+    data,
+    event,
+  ) => {
+    event && event.preventDefault();
+    confirmRegister(data).then(nextStep => {
+      if (nextStep) {
+        onStepChange(nextStep);
+      }
+    })
   };
 
   return (
